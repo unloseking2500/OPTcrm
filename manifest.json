@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "County RUCC Highlighter",
+  "version": "3.2",
+  "description": "Highlights counties with specific Rural-Urban Continuum Codes on unitrustcrm.com",
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.unitrustcrm.com/*"],
+      "js": ["js/county_data.js", "js/content.js"],
+      "css": ["css/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "*://*.unitrustcrm.com/*"
+  ]
+}

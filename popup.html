@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>County RUCC Highlighter</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 350px;
+      margin: 0;
+      padding: 15px;
+      color: #333;
+    }
+    
+    h1 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    h1 .version {
+      font-size: 12px;
+      color: #7f8c8d;
+      font-weight: normal;
+    }
+    
+    h2 {
+      font-size: 16px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .checkbox-container {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+    }
+    
+    .checkbox-item input {
+      margin-right: 5px;
+    }
+    
+    .color-options {
+      margin-top: 10px;
+      display: flex;
+      gap: 15px;
+    }
+    
+    .color-option {
+      display: flex;
+      align-items: center;
+    }
+    
+    .color-option input {
+      margin-right: 5px;
+    }
+    
+    .color-sample {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
+    
+    .yellow-sample {
+      background-color: rgba(255, 255, 0, 0.5);
+      border: 1px solid rgba(255, 215, 0, 0.7);
+    }
+    
+    .green-sample {
+      background-color: rgba(0, 255, 0, 0.5);
+      border: 1px solid rgba(0, 128, 0, 0.7);
+    }
+    
+    .blue-sample {
+      background-color: rgba(0, 0, 255, 0.3);
+      border: 1px solid rgba(0, 0, 139, 0.7);
+    }
+    
+    .button-container {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    #force-highlight {
+      background-color: #2196F3;
+      color: white;
+      flex: 1;
+    }
+    
+    #reload-extension {
+      background-color: #f39c12;
+      color: white;
+      flex: 1;
+    }
+    
+    #apply-settings {
+      background-color: #27ae60;
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+    }
+    
+    .status-container {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 4px solid #6c757d;
+    }
+    
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .status-label {
+      font-weight: bold;
+      color: #495057;
+    }
+    
+    .status {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .status.active {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status.warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status.autonomous {
+      background-color: #e2e3e5;
+      color: #383d41;
+    }
+    
+    .heartbeat-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+      background-color: #6c757d;
+    }
+    
+    .heartbeat-indicator.active {
+      background-color: #28a745;
+      animation: pulse 2s infinite;
+    }
+    
+    .heartbeat-indicator.warning {
+      background-color: #ffc107;
+    }
+    
+    .heartbeat-indicator.error {
+      background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 5px rgba(40, 167, 69, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+      }
+    }
+    
+    .error-container, .warning-container {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .error-container {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .warning-container {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+    }
+    
+    #advanced-options {
+      background-color: #6c757d;
+      color: white;
+      width: 100%;
+      margin-top: 15px;
+      text-align: center;
+    }
+    
+    #advanced-section {
+      display: none;
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    .advanced-button-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    #reset-alarms, #force-recovery {
+      background-color: #6c757d;
+      color: white;
+      flex: 1;
+    }
+    
+    .alarm-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6c757d;
+    }
+    
+    .alarm-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+    
+    footer {
+      margin-top: 15px;
+      font-size: 11px;
+      color: #6c757d;
+      text-align: center;
+    }
+    
+    /* Tooltip styles */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: normal;
+      font-size: 12px;
+    }
+    
+    .tooltip .tooltiptext::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #555 transparent transparent transparent;
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Progress bar for highlighting */
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background-color: #e9ecef;
+      border-radius: 2px;
+      margin-top: 5px;
+      overflow: hidden;
+      display: none;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: #2196F3;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    /* Animation for force highlight button */
+    @keyframes highlight-pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+      }
+    }
+    
+    .pulse-animation {
+      animation: highlight-pulse 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    County RUCC Highlighter
+    <span class="version">v3.2</span>
+  </h1>
+  
+  <div class="error-container" id="error-container">
+    <div id="error-message">Error message will appear here</div>
+  </div>
+  
+  <div class="warning-container" id="warning-container">
+    <div id="warning-message">Warning message will appear here</div>
+  </div>
+  
+  <div class="enable-section">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="tooltip">
+        Enable Highlighting
+        <span class="tooltiptext">Turn county highlighting on or off</span>
+      </span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="enable-highlighting" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+  
+  <h2>RUCC Codes to Highlight:</h2>
+  <div class="checkbox-container">
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-4" checked>
+      <label for="rucc-4">4</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-5" checked>
+      <label for="rucc-5">5</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-6" checked>
+      <label for="rucc-6">6</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-7" checked>
+      <label for="rucc-7">7</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-8" checked>
+      <label for="rucc-8">8</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="rucc-9" checked>
+      <label for="rucc-9">9</label>
+    </div>
+  </div>
+  
+  <h2>Highlight Color:</h2>
+  <div class="color-options">
+    <div class="color-option">
+      <input type="radio" id="color-yellow" name="highlight-color" value="yellow" checked>
+      <span class="color-sample yellow-sample"></span>
+      <label for="color-yellow">Yellow</label>
+    </div>
+    <div class="color-option">
+      <input type="radio" id="color-green" name="highlight-color" value="green">
+      <span class="color-sample green-sample"></span>
+      <label for="color-green">Green</label>
+    </div>
+    <div class="color-option">
+      <input type="radio" id="color-blue" name="highlight-color" value="blue">
+      <span class="color-sample blue-sample"></span>
+      <label for="color-blue">Blue</label>
+    </div>
+  </div>
+  
+  <div class="button-container">
+    <button id="force-highlight" class="pulse-animation">Force Highlight Now</button>
+    <button id="reload-extension">Reload Extension</button>
+  </div>
+  
+  <div class="progress-container" id="highlight-progress">
+    <div class="progress-bar" id="highlight-progress-bar"></div>
+  </div>
+  
+  <button id="apply-settings">Apply Settings</button>
+  
+  <div class="status-container">
+    <div class="status-row">
+      <span class="status-label">Status:</span>
+      <span id="status" class="status active">Active</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Service Worker:</span>
+      <span>
+        <span id="heartbeat-indicator" class="heartbeat-indicator"></span>
+        <span id="worker-status">Checking...</span>
+      </span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Operation Mode:</span>
+      <span id="operation-mode">Checking...</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Content Script:</span>
+      <span id="content-status" class="status">Checking...</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Content Mode:</span>
+      <span id="content-mode" class="status">Checking...</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Highlighted Counties:</span>
+      <span id="highlight-count">0</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Last Highlight:</span>
+      <span id="last-highlight">Never</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Last Active:</span>
+      <span id="last-active">Never</span>
+    </div>
+  </div>
+  
+  <button id="advanced-options">Show Advanced Options</button>
+  
+  <div id="advanced-section">
+    <h2>Advanced Options</h2>
+    <div class="advanced-button-container">
+      <button id="reset-alarms">Reset Alarms</button>
+      <button id="force-recovery">Force Recovery</button>
+    </div>
+    
+    <div class="alarm-status">
+      <div class="alarm-row">
+        <span>Main Alarm:</span>
+        <span id="main-alarm">N/A</span>
+      </div>
+      <div class="alarm-row">
+        <span>Backup Alarm:</span>
+        <span id="backup-alarm">N/A</span>
+      </div>
+      <div class="alarm-row">
+        <span>Recovery Attempts:</span>
+        <span id="recovery-attempts">0</span>
+      </div>
+      <div class="alarm-row">
+        <span>Last Setup:</span>
+        <span id="last-setup">N/A</span>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    County RUCC Highlighter v3.2 - Enhanced Persistence Edition
+  </footer>
+  
+  <script src="js/popup.js"></script>
+</body>
+</html>
