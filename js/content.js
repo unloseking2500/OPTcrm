@@ -4,11 +4,90 @@
 let settings = {
   enableHighlighting: true,
   highlightColor: 'yellow',
-  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9]
+  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
+  regionsToHighlight: ['North', 'Central', 'South']
 };
 
 // Track highlighted elements to avoid duplicates
 const highlightedElements = new Set();
+
+// Florida county regions for region-based highlighting
+const floridaCountyRegions = {
+  "Alachua County": "North",
+  "Baker County": "North",
+  "Bay County": "North",
+  "Bradford County": "North",
+  "Brevard County": "Central",
+  "Broward County": "South",
+  "Calhoun County": "North",
+  "Charlotte County": "South",
+  "Citrus County": "Central",
+  "Clay County": "North",
+  "Collier County": "South",
+  "Columbia County": "North",
+  "DeSoto County": "South",
+  "Dixie County": "North",
+  "Duval County": "North",
+  "Escambia County": "North",
+  "Flagler County": "Central",
+  "Franklin County": "North",
+  "Gadsden County": "North",
+  "Gilchrist County": "North",
+  "Glades County": "South",
+  "Gulf County": "North",
+  "Hamilton County": "North",
+  "Hardee County": "South",
+  "Hendry County": "South",
+  "Hernando County": "Central",
+  "Highlands County": "South",
+  "Hillsborough County": "Central",
+  "Holmes County": "North",
+  "Indian River County": "South",
+  "Jackson County": "North",
+  "Jefferson County": "North",
+  "Lafayette County": "North",
+  "Lake County": "Central",
+  "Lee County": "South",
+  "Leon County": "North",
+  "Levy County": "North",
+  "Liberty County": "North",
+  "Madison County": "North",
+  "Manatee County": "South",
+  "Marion County": "Central",
+  "Martin County": "South",
+  "Miami-Dade County": "South",
+  "Monroe County": "South",
+  "Nassau County": "North",
+  "Okaloosa County": "North",
+  "Okeechobee County": "South",
+  "Orange County": "Central",
+  "Osceola County": "Central",
+  "Palm Beach County": "South",
+  "Pasco County": "Central",
+  "Pinellas County": "Central",
+  "Polk County": "Central",
+  "Putnam County": "Central",
+  "St. Johns County": "Central",
+  "St. Lucie County": "South",
+  "Santa Rosa County": "North",
+  "Sarasota County": "South",
+  "Seminole County": "Central",
+  "Sumter County": "Central",
+  "Suwannee County": "North",
+  "Taylor County": "North",
+  "Union County": "North",
+  "Volusia County": "Central",
+  "Wakulla County": "North",
+  "Walton County": "North",
+  "Washington County": "North"
+};
+
+// Mapping of Florida regions to highlight color classes
+const regionHighlightColors = {
+  "North": "blue",
+  "Central": "yellow",
+  "South": "green"
+};
 
 // Track the current state
 let currentState = '';
@@ -136,7 +215,7 @@ async function loadLocalSettings() {
   try {
     const localData = await chrome.storage.local.get('settings');
     if (localData.settings) {
-      settings = localData.settings;
+      settings = {...settings, ...localData.settings};
       debugLog('Loaded settings from local storage');
     } else {
       debugLog('No settings found in local storage, using defaults');
@@ -161,7 +240,7 @@ function registerWithBackgroundScript() {
   try {
     chrome.runtime.sendMessage({action: 'contentScriptActive'}, function(response) {
       if (response && response.settings) {
-        settings = response.settings;
+        settings = {...settings, ...response.settings};
         backgroundConnected = true;
         lastBackgroundContact = Date.now();
         autonomousMode = false;
@@ -213,7 +292,7 @@ function checkBackgroundConnection() {
           // We've reconnected, get latest settings
           chrome.runtime.sendMessage({action: 'getSettings'}, function(settingsResponse) {
             if (settingsResponse && settingsResponse.settings) {
-              settings = settingsResponse.settings;
+              settings = {...settings, ...settingsResponse.settings};
               debugLog('Received updated settings after reconnection');
               saveLocalSettings();
               
@@ -827,10 +906,19 @@ function highlightCounties() {
     countyRows.forEach(row => {
       const countyName = extractCountyName(row);
       if (countyName) {
-        const ruccCode = findRuccCode(state, countyName);
-        if (ruccCode && settings.ruccCodesToHighlight.includes(ruccCode)) {
-          highlightElement(row, ruccCode);
-          highlightCount++;
+        if (state === 'FL') {
+          const region = floridaCountyRegions[countyName];
+          if (region && settings.regionsToHighlight.includes(region)) {
+            if (highlightFloridaCounty(row, countyName)) {
+              highlightCount++;
+            }
+          }
+        } else {
+          const ruccCode = findRuccCode(state, countyName);
+          if (ruccCode && settings.ruccCodesToHighlight.includes(ruccCode)) {
+            highlightElement(row, ruccCode);
+            highlightCount++;
+          }
         }
       }
     });
@@ -1130,6 +1218,75 @@ function highlightElement(element, ruccCode) {
   }
 }
 
+// Highlight Florida counties by region
+function highlightFloridaCounty(element, countyName) {
+  try {
+    // Skip if already highlighted
+    if (highlightedElements.has(element)) {
+      return false;
+    }
+
+    const region = floridaCountyRegions[countyName];
+    if (!region) return false;
+
+    const colorClass = regionHighlightColors[region];
+    if (!colorClass) return false;
+
+    debugLog(`Highlighting ${countyName} in region ${region}`);
+
+    element.classList.add('rucc-highlighted');
+    element.classList.remove('yellow', 'green', 'blue');
+    element.classList.add(colorClass);
+
+    // Use data-rucc attribute for tooltip compatibility
+    element.setAttribute('data-rucc', `Region: ${region}`);
+
+    const bgColors = {
+      'yellow': 'rgba(255, 255, 0, 0.5)',
+      'green': 'rgba(0, 255, 0, 0.5)',
+      'blue': 'rgba(0, 0, 255, 0.3)'
+    };
+
+    const borderColors = {
+      'yellow': 'rgba(255, 215, 0, 0.7)',
+      'green': 'rgba(0, 128, 0, 0.7)',
+      'blue': 'rgba(0, 0, 139, 0.7)'
+    };
+
+    const bgColor = bgColors[colorClass];
+    const borderColor = borderColors[colorClass];
+
+    element.style.setProperty('background-color', bgColor, 'important');
+    element.style.setProperty('border', `2px solid ${borderColor}`, 'important');
+    element.style.setProperty('box-shadow', '0 0 5px rgba(0, 0, 0, 0.2)', 'important');
+    element.style.setProperty('position', 'relative', 'important');
+    element.style.setProperty('z-index', '1', 'important');
+
+    if (element.tagName === 'TR') {
+      const cells = element.querySelectorAll('td');
+      cells.forEach(cell => {
+        cell.classList.add('rucc-highlighted-cell');
+        cell.style.setProperty('background-color', bgColor, 'important');
+      });
+
+      if (cells.length > 0) {
+        const countyCell = cells[0];
+        const countyText = countyCell.textContent.trim();
+        if (!countyCell.textContent.includes('[Region:')) {
+          countyCell.innerHTML = `${countyText} <span class="rucc-code" style="font-weight: bold !important; color: #d32f2f !important; margin-left: 5px !important;">[Region: ${region}]</span>`;
+        }
+      }
+    }
+
+    highlightedElements.add(element);
+    void element.offsetHeight;
+    return true;
+  } catch (error) {
+    debugLog(`Error in highlightFloridaCounty: ${error.message}`);
+    return false;
+  }
+}
+
 // Remove all highlights
 function removeAllHighlights() {
   try {
@@ -1154,14 +1311,14 @@ function removeAllHighlights() {
           cell.style.removeProperty('background-color');
         });
         
-        // Remove RUCC code from county name in the first cell
+        // Remove RUCC or region tag from county name in the first cell
         if (cells.length > 0) {
           const countyCell = cells[0];
           const countyText = countyCell.textContent;
           
-          // Check if RUCC code is displayed
-          if (countyText.includes('[RUCC:')) {
-            const originalName = countyText.split('[RUCC:')[0].trim();
+          // Check if RUCC code or region tag is displayed
+          if (countyText.includes('[RUCC:') || countyText.includes('[Region:')) {
+            const originalName = countyText.split('[')[0].trim();
             countyCell.textContent = originalName;
           }
         }
@@ -1185,7 +1342,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   autonomousMode = false;
   
   if (message.action === 'updateSettings') {
-    settings = message.settings;
+    settings = {...settings, ...message.settings};
     debugLog('Updated settings from background script');
     
     // Save settings locally for backup

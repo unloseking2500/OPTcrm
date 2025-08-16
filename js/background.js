@@ -6,6 +6,7 @@ let settings = {
   enableHighlighting: true,
   highlightColor: 'yellow',
   ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
+    regionsToHighlight: ['North', 'Central', 'South'],
   lastActiveTimestamp: Date.now()
 };
 
