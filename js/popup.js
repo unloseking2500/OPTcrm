@@ -14,12 +14,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('rucc-7').addEventListener('change', updateSettings);
   document.getElementById('rucc-8').addEventListener('change', updateSettings);
   document.getElementById('rucc-9').addEventListener('change', updateSettings);
-  document.getElementById('region-north').addEventListener('change', updateSettings);
-  document.getElementById('region-central').addEventListener('change', updateSettings);
-  document.getElementById('region-south').addEventListener('change', updateSettings);
   document.getElementById('color-yellow').addEventListener('change', updateSettings);
   document.getElementById('color-green').addEventListener('change', updateSettings);
   document.getElementById('color-blue').addEventListener('change', updateSettings);
+
+  // Region filter checkboxes.  Updating these will trigger updateSettings() so
+  // the Apply Settings button remains enabled/disabled appropriately.  Region
+  // filters determine which Florida counties receive a region label.
+  document.getElementById('region-north').addEventListener('change', updateSettings);
+  document.getElementById('region-central').addEventListener('change', updateSettings);
+  document.getElementById('region-south').addEventListener('change', updateSettings);
   document.getElementById('force-highlight').addEventListener('click', forceHighlight);
   document.getElementById('reload-extension').addEventListener('click', reloadExtension);
   document.getElementById('apply-settings').addEventListener('click', applySettings);
@@ -145,15 +149,16 @@ function updateUI(settings) {
   document.getElementById('rucc-8').checked = ruccCodes.includes(8);
   document.getElementById('rucc-9').checked = ruccCodes.includes(9);
   
-  // Set region checkboxes
-  const regions = settings.regionsToHighlight || ['North', 'Central', 'South'];
-  document.getElementById('region-north').checked = regions.includes('North');
-  document.getElementById('region-central').checked = regions.includes('Central');
-  document.getElementById('region-south').checked = regions.includes('South');
-  
   // Set highlight color
   const color = settings.highlightColor || 'yellow';
   document.getElementById(`color-${color}`).checked = true;
+
+  // Set region filters.  If regionFilters is undefined (older settings), default
+  // to all three regions.  Checkboxes reflect whether each region is included.
+  const regionFilters = settings.regionFilters || ['North', 'Central', 'South'];
+  document.getElementById('region-north').checked = regionFilters.includes('North');
+  document.getElementById('region-central').checked = regionFilters.includes('Central');
+  document.getElementById('region-south').checked = regionFilters.includes('South');
   
   // Update UI state based on highlighting enabled/disabled
   updateUIState();
@@ -199,23 +204,26 @@ async function applySettings() {
   if (document.getElementById('rucc-8').checked) ruccCodesToHighlight.push(8);
   if (document.getElementById('rucc-9').checked) ruccCodesToHighlight.push(9);
   
-   // Get selected regions
-  const regionsToHighlight = [];
-  if (document.getElementById('region-north').checked) regionsToHighlight.push('North');
-  if (document.getElementById('region-central').checked) regionsToHighlight.push('Central');
-  if (document.getElementById('region-south').checked) regionsToHighlight.push('South');
-  
   // Get selected highlight color
   let highlightColor = 'yellow';
   if (document.getElementById('color-green').checked) highlightColor = 'green';
   if (document.getElementById('color-blue').checked) highlightColor = 'blue';
+
+  // Get selected regions.  Regions control which Florida counties receive a region
+  // label.  When a region checkbox is checked, that region's counties will be
+  // labeled (North, Central or South).  If no regions are selected the content
+  // script will skip adding any labels.
+  const regionFilters = [];
+  if (document.getElementById('region-north').checked) regionFilters.push('North');
+  if (document.getElementById('region-central').checked) regionFilters.push('Central');
+  if (document.getElementById('region-south').checked) regionFilters.push('South');
   
   // Create settings object
   const newSettings = {
     enableHighlighting,
     ruccCodesToHighlight,
-	regionsToHighlight,
     highlightColor,
+    regionFilters,
     lastActiveTimestamp: Date.now()
   };
   

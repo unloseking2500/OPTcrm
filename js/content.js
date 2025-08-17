@@ -4,15 +4,45 @@
 let settings = {
   enableHighlighting: true,
   highlightColor: 'yellow',
-  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
-  regionsToHighlight: ['North', 'Central', 'South']
+  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9]
 };
 
 // Track highlighted elements to avoid duplicates
 const highlightedElements = new Set();
 
-// Florida county regions for region-based highlighting
-const floridaCountyRegions = {
+// Track the current state
+let currentState = '';
+
+// Track connection status with background script
+let backgroundConnected = false;
+let lastBackgroundContact = 0;
+let autonomousMode = false;
+
+// Track highlighting state for persistence
+let lastHighlightTime = 0;
+let highlightCount = 0;
+let highlightingActive = false;
+let domStateHash = '';
+let recoveryAttempts = 0;
+
+// Track force highlight requests
+let forceHighlightRequested = false;
+let lastForceHighlightTime = 0;
+
+// Status indicator element
+let statusIndicator = null;
+
+// Debug logging function
+function debugLog(message) {
+  console.log(`[RUCC Highlighter] ${message}`);
+}
+
+// Mapping of Florida counties to geographic regions.  This map is derived
+// from the uploaded CSV "Financial Calculators - FL regions.csv".  Keys are
+// county names including the "County" suffix and values are one of
+// "North", "Central" or "South".  The content script uses this to append
+// labels to county names when the current page is for Florida.
+const flCountyRegions = {
   "Alachua County": "North",
   "Baker County": "North",
   "Bay County": "North",
@@ -82,38 +112,113 @@ const floridaCountyRegions = {
   "Washington County": "North"
 };
 
-// Mapping of Florida regions to highlight color classes
-const regionHighlightColors = {
-  "North": "blue",
-  "Central": "yellow",
-  "South": "green"
-};
+/**
+ * Ensure region label styles are available in the document.  Region labels are
+ * small colored badges appended to county names indicating whether the county
+ * is in the North, Central or South part of Florida.  Styles are injected
+ * once per page to avoid duplication.
+ */
+function injectRegionStyles() {
+  if (document.getElementById('fl-region-label-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'fl-region-label-styles';
+  style.textContent = `
+    /* Region label styling: use a data attribute instead of modifying text */
+    td[data-fl-region] {
+      position: relative !important;
+    }
+    td[data-fl-region]::after {
+      content: attr(data-fl-region);
+      font-weight: bold;
+      margin-left: 5px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 90%;
+    }
+    td[data-fl-region="North"]::after {
+      background-color: #e6f7ff;
+      color: #007acc;
+    }
+    td[data-fl-region="Central"]::after {
+      background-color: #fffbe6;
+      color: #c79a00;
+    }
+    td[data-fl-region="South"]::after {
+      background-color: #ffe6e6;
+      color: #cc3300;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
-// Track the current state
-let currentState = '';
+/**
+ * Append region labels to Florida counties in the currently detected state table.
+ * A region label is added only when the current page is displaying Florida data
+ * and the user has selected that region in the popup.  Labels are appended to
+ * the first cell of each county row.  Existing region labels are removed before
+ * new ones are added to avoid duplication.
+ */
+function addRegionLabels() {
+  try {
+    // Determine which regions are enabled; default to all if undefined
+    const selectedRegions = (settings.regionFilters && settings.regionFilters.length > 0)
+      ? settings.regionFilters
+      : ['North', 'Central', 'South'];
+    // Only label counties when the current state is Florida
+    const state = currentState || detectCurrentState();
+    const stateCode = getStateCode(state);
+    if (stateCode !== 'FL') {
+      return;
+    }
+    // Inject styling for labels
+    injectRegionStyles();
+    const countyTable = findCountyTable();
+    if (!countyTable) return;
+    const countyRows = findCountyRows(countyTable);
+    countyRows.forEach(row => {
+      const countyName = extractCountyName(row);
+      if (countyName && flCountyRegions[countyName]) {
+        const region = flCountyRegions[countyName];
+        const cells = row.querySelectorAll('td');
+        if (cells.length === 0) return;
+        const countyCell = cells[0];
+        // Check any existing region labels (old span based implementation) and remove them
+        const existing = countyCell.querySelectorAll('.fl-region-label');
+        existing.forEach(el => el.remove());
+        if (selectedRegions.includes(region)) {
+          // Only set the attribute when it changes to avoid unnecessary mutations
+          if (countyCell.getAttribute('data-fl-region') !== region) {
+            countyCell.setAttribute('data-fl-region', region);
+          }
+        } else {
+          // Only remove the attribute when it exists
+          if (countyCell.hasAttribute('data-fl-region')) {
+            countyCell.removeAttribute('data-fl-region');
+          }
+        }
+      }
+    });
+  } catch (error) {
+    debugLog(`Error in addRegionLabels: ${error.message}`);
+  }
+}
 
-// Track connection status with background script
-let backgroundConnected = false;
-let lastBackgroundContact = 0;
-let autonomousMode = false;
-
-// Track highlighting state for persistence
-let lastHighlightTime = 0;
-let highlightCount = 0;
-let highlightingActive = false;
-let domStateHash = '';
-let recoveryAttempts = 0;
-
-// Track force highlight requests
-let forceHighlightRequested = false;
-let lastForceHighlightTime = 0;
-
-// Status indicator element
-let statusIndicator = null;
-
-// Debug logging function
-function debugLog(message) {
-  console.log(`[RUCC Highlighter] ${message}`);
+/**
+ * Remove all region labels from the current page.  This is called when
+ * highlights are removed or when settings are updated to ensure that labels
+ * do not persist incorrectly.
+ */
+function removeRegionLabels() {
+  try {
+    // Remove any legacy span based labels
+    const labels = document.querySelectorAll('.fl-region-label');
+    labels.forEach(label => label.remove());
+    // Also remove the data attribute used for region pseudo‑labels
+    const regionCells = document.querySelectorAll('td[data-fl-region]');
+    regionCells.forEach(cell => cell.removeAttribute('data-fl-region'));
+  } catch (error) {
+    debugLog(`Error in removeRegionLabels: ${error.message}`);
+  }
 }
 
 // Initialize the content script
@@ -215,7 +320,7 @@ async function loadLocalSettings() {
   try {
     const localData = await chrome.storage.local.get('settings');
     if (localData.settings) {
-      settings = {...settings, ...localData.settings};
+      settings = localData.settings;
       debugLog('Loaded settings from local storage');
     } else {
       debugLog('No settings found in local storage, using defaults');
@@ -240,7 +345,7 @@ function registerWithBackgroundScript() {
   try {
     chrome.runtime.sendMessage({action: 'contentScriptActive'}, function(response) {
       if (response && response.settings) {
-        settings = {...settings, ...response.settings};
+        settings = response.settings;
         backgroundConnected = true;
         lastBackgroundContact = Date.now();
         autonomousMode = false;
@@ -292,7 +397,7 @@ function checkBackgroundConnection() {
           // We've reconnected, get latest settings
           chrome.runtime.sendMessage({action: 'getSettings'}, function(settingsResponse) {
             if (settingsResponse && settingsResponse.settings) {
-              settings = {...settings, ...settingsResponse.settings};
+              settings = settingsResponse.settings;
               debugLog('Received updated settings after reconnection');
               saveLocalSettings();
               
@@ -906,19 +1011,10 @@ function highlightCounties() {
     countyRows.forEach(row => {
       const countyName = extractCountyName(row);
       if (countyName) {
-        if (state === 'FL') {
-          const region = floridaCountyRegions[countyName];
-          if (region && settings.regionsToHighlight.includes(region)) {
-            if (highlightFloridaCounty(row, countyName)) {
-              highlightCount++;
-            }
-          }
-        } else {
-          const ruccCode = findRuccCode(state, countyName);
-          if (ruccCode && settings.ruccCodesToHighlight.includes(ruccCode)) {
-            highlightElement(row, ruccCode);
-            highlightCount++;
-          }
+        const ruccCode = findRuccCode(state, countyName);
+        if (ruccCode && settings.ruccCodesToHighlight.includes(ruccCode)) {
+          highlightElement(row, ruccCode);
+          highlightCount++;
         }
       }
     });
@@ -937,6 +1033,11 @@ function highlightCounties() {
       updateStatusIndicator(`Highlighted ${highlightCount} counties`, 'highlight', 3000);
       forceHighlightRequested = false;
     }
+
+    // After highlighting RUCC codes, append region labels to Florida counties.
+    // This call is safe for non‑Florida pages; it will return immediately
+    // if the detected state is not Florida or no regions are selected.
+    addRegionLabels();
   } catch (error) {
     debugLog(`Error in highlightCounties: ${error.message}`);
   }
@@ -1004,17 +1105,24 @@ function extractCountyName(row) {
     if (!firstCell) return null;
     
     let countyText = firstCell.textContent.trim();
-    
+
     // Remove any existing RUCC code display
     if (countyText.includes('[RUCC:')) {
       countyText = countyText.split('[RUCC:')[0].trim();
     }
-    
-    // Check if it ends with "County"
+
+    // Remove region labels appended by this extension (North, Central or South)
+    // Region labels are appended after the county name separated by a space.  If
+    // present, strip the region from the end of the string.  Use a regular
+    // expression to handle optional trailing whitespace.  This ensures the
+    // original county name is recovered for lookup.
+    countyText = countyText.replace(/\s+(North|Central|South)\s*$/, '');
+
+    // Check if it ends with "County" after cleaning
     if (!countyText.endsWith('County')) {
       countyText += ' County';
     }
-    
+
     return countyText;
   } catch (error) {
     debugLog(`Error extracting county name: ${error.message}`);
@@ -1218,75 +1326,6 @@ function highlightElement(element, ruccCode) {
   }
 }
 
-// Highlight Florida counties by region
-function highlightFloridaCounty(element, countyName) {
-  try {
-    // Skip if already highlighted
-    if (highlightedElements.has(element)) {
-      return false;
-    }
-
-    const region = floridaCountyRegions[countyName];
-    if (!region) return false;
-
-    const colorClass = regionHighlightColors[region];
-    if (!colorClass) return false;
-
-    debugLog(`Highlighting ${countyName} in region ${region}`);
-
-    element.classList.add('rucc-highlighted');
-    element.classList.remove('yellow', 'green', 'blue');
-    element.classList.add(colorClass);
-
-    // Use data-rucc attribute for tooltip compatibility
-    element.setAttribute('data-rucc', `Region: ${region}`);
-
-    const bgColors = {
-      'yellow': 'rgba(255, 255, 0, 0.5)',
-      'green': 'rgba(0, 255, 0, 0.5)',
-      'blue': 'rgba(0, 0, 255, 0.3)'
-    };
-
-    const borderColors = {
-      'yellow': 'rgba(255, 215, 0, 0.7)',
-      'green': 'rgba(0, 128, 0, 0.7)',
-      'blue': 'rgba(0, 0, 139, 0.7)'
-    };
-
-    const bgColor = bgColors[colorClass];
-    const borderColor = borderColors[colorClass];
-
-    element.style.setProperty('background-color', bgColor, 'important');
-    element.style.setProperty('border', `2px solid ${borderColor}`, 'important');
-    element.style.setProperty('box-shadow', '0 0 5px rgba(0, 0, 0, 0.2)', 'important');
-    element.style.setProperty('position', 'relative', 'important');
-    element.style.setProperty('z-index', '1', 'important');
-
-    if (element.tagName === 'TR') {
-      const cells = element.querySelectorAll('td');
-      cells.forEach(cell => {
-        cell.classList.add('rucc-highlighted-cell');
-        cell.style.setProperty('background-color', bgColor, 'important');
-      });
-
-      if (cells.length > 0) {
-        const countyCell = cells[0];
-        const countyText = countyCell.textContent.trim();
-        if (!countyCell.textContent.includes('[Region:')) {
-          countyCell.innerHTML = `${countyText} <span class="rucc-code" style="font-weight: bold !important; color: #d32f2f !important; margin-left: 5px !important;">[Region: ${region}]</span>`;
-        }
-      }
-    }
-
-    highlightedElements.add(element);
-    void element.offsetHeight;
-    return true;
-  } catch (error) {
-    debugLog(`Error in highlightFloridaCounty: ${error.message}`);
-    return false;
-  }
-}
-
 // Remove all highlights
 function removeAllHighlights() {
   try {
@@ -1311,19 +1350,22 @@ function removeAllHighlights() {
           cell.style.removeProperty('background-color');
         });
         
-        // Remove RUCC or region tag from county name in the first cell
+        // Remove RUCC code from county name in the first cell
         if (cells.length > 0) {
           const countyCell = cells[0];
           const countyText = countyCell.textContent;
           
-          // Check if RUCC code or region tag is displayed
-          if (countyText.includes('[RUCC:') || countyText.includes('[Region:')) {
-            const originalName = countyText.split('[')[0].trim();
+          // Check if RUCC code is displayed
+          if (countyText.includes('[RUCC:')) {
+            const originalName = countyText.split('[RUCC:')[0].trim();
             countyCell.textContent = originalName;
           }
         }
       }
     });
+
+    // Also remove any region labels that may have been added to county names.
+    removeRegionLabels();
     
     // Clear the set of highlighted elements
     highlightedElements.clear();
@@ -1342,7 +1384,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   autonomousMode = false;
   
   if (message.action === 'updateSettings') {
-    settings = {...settings, ...message.settings};
+    settings = message.settings;
     debugLog('Updated settings from background script');
     
     // Save settings locally for backup
@@ -1355,7 +1397,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       highlightCounties();
       updateStatusIndicator('Settings updated', 'active', 2000);
     } else {
+      // When highlighting is disabled we still want to control region labels.  First
+      // remove any existing highlights and region labels, then append labels
+      // according to the current settings.  addRegionLabels() will only add
+      // labels on Florida pages and will respect the selected regionFilters.
       removeAllHighlights();
+      // Append region labels when appropriate
+      addRegionLabels();
       updateStatusIndicator('Highlighting disabled', 'info', 2000);
     }
     

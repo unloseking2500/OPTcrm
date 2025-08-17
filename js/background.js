@@ -6,8 +6,20 @@ let settings = {
   enableHighlighting: true,
   highlightColor: 'yellow',
   ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
-    regionsToHighlight: ['North', 'Central', 'South'],
-  lastActiveTimestamp: Date.now()
+  /**
+   * Track the last time the extension was active. Updated whenever settings
+   * are applied or the service worker wakes up. This timestamp is persisted
+   * via chrome.storage and sent to the popup for display.
+   */
+  lastActiveTimestamp: Date.now(),
+  /**
+   * Filter for Florida region labels. When a region is included in this
+   * array, counties in that region will display a label next to the county
+   * name (e.g. North, Central or South). By default all three regions are
+   * enabled. The content script reads this setting to decide which labels
+   * to inject.
+   */
+  regionFilters: ['North', 'Central', 'South']
 };
 
 // Constants for alarm timing

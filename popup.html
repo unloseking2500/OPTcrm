@@ -460,25 +460,6 @@
     </div>
   </div>
   
-  
-  <h2>Florida Regions to Highlight:</h2>
-  <div class="checkbox-container">
-    <div class="checkbox-item">
-      <input type="checkbox" id="region-north" checked>
-      <label for="region-north">North</label>
-    </div>
-    <div class="checkbox-item">
-      <input type="checkbox" id="region-central" checked>
-      <label for="region-central">Central</label>
-    </div>
-    <div class="checkbox-item">
-      <input type="checkbox" id="region-south" checked>
-      <label for="region-south">South</label>
-    </div>
-  </div>
-
-  
-  
   <h2>Highlight Color:</h2>
   <div class="color-options">
     <div class="color-option">
@@ -495,6 +476,26 @@
       <input type="radio" id="color-blue" name="highlight-color" value="blue">
       <span class="color-sample blue-sample"></span>
       <label for="color-blue">Blue</label>
+    </div>
+  </div>
+
+  <!-- Region selection checkboxes.  When a region is checked the content script
+       will append a label (North, Central or South) next to the county name
+       for Florida counties belonging to that region.  All regions are enabled
+       by default. -->
+  <h2>Region Labels:</h2>
+  <div class="checkbox-container">
+    <div class="checkbox-item">
+      <input type="checkbox" id="region-north" checked>
+      <label for="region-north">North</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="region-central" checked>
+      <label for="region-central">Central</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="checkbox" id="region-south" checked>
+      <label for="region-south">South</label>
     </div>
   </div>
   
