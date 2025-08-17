@@ -460,6 +460,32 @@
     </div>
   </div>
   
+  <!-- Hispanic percentage filter radio buttons.  These controls allow
+       users to specify when the Hispanic percentage label should be
+       displayed next to each county name.  "Show all" will display
+       percentages for all counties, while the other options restrict
+       the labels to counties with Hispanic populations below the
+       selected threshold. -->
+  <h2>Hispanic % Filter:</h2>
+  <div class="checkbox-container" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-all" name="hispanic-filter" value="all" checked>
+      <label for="hispanic-all">Show all</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-50" name="hispanic-filter" value="lt50">
+      <label for="hispanic-50">&lt; 50%</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-25" name="hispanic-filter" value="lt25">
+      <label for="hispanic-25">&lt; 25%</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-10" name="hispanic-filter" value="lt10">
+      <label for="hispanic-10">&lt; 10%</label>
+    </div>
+  </div>
+  
   <h2>Highlight Color:</h2>
   <div class="color-options">
     <div class="color-option">

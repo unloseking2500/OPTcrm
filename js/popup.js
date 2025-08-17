@@ -24,6 +24,14 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('region-north').addEventListener('change', updateSettings);
   document.getElementById('region-central').addEventListener('change', updateSettings);
   document.getElementById('region-south').addEventListener('change', updateSettings);
+
+  // Hispanic percentage filter radio buttons.  Any change to these
+  // options should trigger updateSettings() so that the Apply
+  // Settings button becomes enabled/disabled appropriately.
+  document.getElementById('hispanic-all').addEventListener('change', updateSettings);
+  document.getElementById('hispanic-50').addEventListener('change', updateSettings);
+  document.getElementById('hispanic-25').addEventListener('change', updateSettings);
+  document.getElementById('hispanic-10').addEventListener('change', updateSettings);
   document.getElementById('force-highlight').addEventListener('click', forceHighlight);
   document.getElementById('reload-extension').addEventListener('click', reloadExtension);
   document.getElementById('apply-settings').addEventListener('click', applySettings);
@@ -159,6 +167,25 @@ function updateUI(settings) {
   document.getElementById('region-north').checked = regionFilters.includes('North');
   document.getElementById('region-central').checked = regionFilters.includes('Central');
   document.getElementById('region-south').checked = regionFilters.includes('South');
+
+  // Set Hispanic filter.  The hispanicFilter property controls which
+  // counties will receive Hispanic percentage labels in the content
+  // script.  Supported values: 'all' (default), 'lt50', 'lt25', 'lt10'.
+  const hispanicFilter = settings.hispanicFilter || 'all';
+  // Clear all radio selections first
+  document.getElementById('hispanic-all').checked = false;
+  document.getElementById('hispanic-50').checked = false;
+  document.getElementById('hispanic-25').checked = false;
+  document.getElementById('hispanic-10').checked = false;
+  if (hispanicFilter === 'lt10') {
+    document.getElementById('hispanic-10').checked = true;
+  } else if (hispanicFilter === 'lt25') {
+    document.getElementById('hispanic-25').checked = true;
+  } else if (hispanicFilter === 'lt50') {
+    document.getElementById('hispanic-50').checked = true;
+  } else {
+    document.getElementById('hispanic-all').checked = true;
+  }
   
   // Update UI state based on highlighting enabled/disabled
   updateUIState();
@@ -174,12 +201,22 @@ function updateUIState() {
     document.querySelectorAll('.color-option input').forEach(radio => {
       radio.disabled = true;
     });
+
+    // Disable Hispanic filter radios
+    document.querySelectorAll('input[name="hispanic-filter"]').forEach(radio => {
+      radio.disabled = true;
+    });
   } else {
     // Enable all checkboxes if highlighting is enabled
     document.querySelectorAll('.checkbox-item input').forEach(checkbox => {
       checkbox.disabled = false;
     });
     document.querySelectorAll('.color-option input').forEach(radio => {
+      radio.disabled = false;
+    });
+
+    // Enable Hispanic filter radios
+    document.querySelectorAll('input[name="hispanic-filter"]').forEach(radio => {
       radio.disabled = false;
     });
   }
@@ -217,6 +254,20 @@ async function applySettings() {
   if (document.getElementById('region-north').checked) regionFilters.push('North');
   if (document.getElementById('region-central').checked) regionFilters.push('Central');
   if (document.getElementById('region-south').checked) regionFilters.push('South');
+
+  // Determine the Hispanic percentage filter selection.  Values are
+  // 'all', 'lt50', 'lt25', 'lt10' corresponding to no filter, less
+  // than 50%, less than 25% and less than 10% respectively.
+  let hispanicFilter = 'all';
+  if (document.getElementById('hispanic-10').checked) {
+    hispanicFilter = 'lt10';
+  } else if (document.getElementById('hispanic-25').checked) {
+    hispanicFilter = 'lt25';
+  } else if (document.getElementById('hispanic-50').checked) {
+    hispanicFilter = 'lt50';
+  } else if (document.getElementById('hispanic-all').checked) {
+    hispanicFilter = 'all';
+  }
   
   // Create settings object
   const newSettings = {
@@ -224,6 +275,7 @@ async function applySettings() {
     ruccCodesToHighlight,
     highlightColor,
     regionFilters,
+    hispanicFilter,
     lastActiveTimestamp: Date.now()
   };
   

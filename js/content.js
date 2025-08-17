@@ -4,7 +4,11 @@
 let settings = {
   enableHighlighting: true,
   highlightColor: 'yellow',
-  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9]
+  ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
+  // Show Hispanic percentage labels for all counties by default.  This
+  // property may be updated via the popup UI to limit labels to counties
+  // with Hispanic populations below 50%, 25% or 10%.
+  hispanicFilter: 'all'
 };
 
 // Track highlighted elements to avoid duplicates
@@ -111,6 +115,138 @@ const flCountyRegions = {
   "Walton County": "North",
   "Washington County": "North"
 };
+
+/**
+ * Append Hispanic percentage labels to county names based on the
+ * selected state and the user‑configured threshold.  Hispanic
+ * population percentages are defined in the injected hispanicData
+ * object, which maps two‑letter state codes to county names and
+ * their corresponding percentage values.  A small vertical bar is
+ * displayed next to each percentage, where the bar color fades from
+ * green (low percentage) to red (high percentage).  Labels are only
+ * added when highlighting is enabled and when the county meets the
+ * configured filter threshold.
+ */
+function addHispanicLabels() {
+  try {
+    // Only proceed when highlighting is enabled
+    if (!settings.enableHighlighting) return;
+
+    // Ensure hispanicData exists
+    if (typeof hispanicData === 'undefined') {
+      debugLog('Hispanic data not available');
+      return;
+    }
+
+    // Determine current state code
+    const state = currentState || detectCurrentState();
+    const stateCode = getStateCode(state);
+    if (!stateCode || !hispanicData[stateCode]) {
+      return;
+    }
+
+    // Determine threshold from settings.  Supported values: 'all', 'lt50', 'lt25', 'lt10'
+    const threshold = settings.hispanicFilter || 'all';
+
+    // Find the county table and rows
+    const countyTable = findCountyTable();
+    if (!countyTable) return;
+    const countyRows = findCountyRows(countyTable);
+
+    countyRows.forEach(row => {
+      const countyName = extractCountyName(row);
+      if (!countyName) return;
+      const cells = row.querySelectorAll('td');
+      if (cells.length === 0) return;
+      const countyCell = cells[0];
+      // Remove any existing Hispanic labels
+      const existingLabels = countyCell.querySelectorAll('.hispanic-label');
+      existingLabels.forEach(label => label.remove());
+
+      // Retrieve percentage value
+      const stateMap = hispanicData[stateCode];
+      let percent = undefined;
+      if (stateMap) {
+        // Try exact match with countyName (should include 'County')
+        if (Object.prototype.hasOwnProperty.call(stateMap, countyName)) {
+          percent = stateMap[countyName];
+        } else if (countyName.endsWith(' County')) {
+          const shortName = countyName.replace(/ County$/, '');
+          if (Object.prototype.hasOwnProperty.call(stateMap, shortName)) {
+            percent = stateMap[shortName];
+          }
+        }
+      }
+      if (typeof percent === 'undefined') {
+        return;
+      }
+
+      // Determine if label should be shown based on threshold
+      let show = true;
+      const value = Number(percent);
+      if (threshold === 'lt50' && value >= 50) show = false;
+      if (threshold === 'lt25' && value >= 25) show = false;
+      if (threshold === 'lt10' && value >= 10) show = false;
+      if (!show) return;
+
+      // Compute color for the bar: interpolate between green and red
+      const start = {r: 0, g: 160, b: 0};
+      const end = {r: 220, g: 50, b: 50};
+      const ratio = Math.max(0, Math.min(1, value / 100));
+      const r = Math.round(start.r + (end.r - start.r) * ratio);
+      const g = Math.round(start.g + (end.g - start.g) * ratio);
+      const b = Math.round(start.b + (end.b - start.b) * ratio);
+      const barColor = `rgb(${r}, ${g}, ${b})`;
+
+      // Create label container
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'hispanic-label';
+      labelSpan.style.marginLeft = '5px';
+      labelSpan.style.display = 'inline-flex';
+      labelSpan.style.alignItems = 'center';
+
+      // Create bar element
+      const barSpan = document.createElement('span');
+      barSpan.className = 'hispanic-bar';
+      barSpan.style.display = 'inline-block';
+      barSpan.style.width = '4px';
+      barSpan.style.height = '12px';
+      barSpan.style.backgroundColor = barColor;
+      barSpan.style.marginRight = '3px';
+      barSpan.style.borderRadius = '2px';
+
+      // Create percent text element
+      const percentSpan = document.createElement('span');
+      percentSpan.className = 'hispanic-percent';
+      percentSpan.textContent = `${value}%`;
+      percentSpan.style.fontWeight = 'bold';
+      percentSpan.style.color = barColor;
+
+      // Append bar and percent to label container
+      labelSpan.appendChild(barSpan);
+      labelSpan.appendChild(percentSpan);
+
+      // Append label to county cell
+      countyCell.appendChild(labelSpan);
+    });
+  } catch (error) {
+    debugLog(`Error in addHispanicLabels: ${error.message}`);
+  }
+}
+
+/**
+ * Remove all Hispanic percentage labels from the current page.  This is
+ * called when highlights are removed or when settings are updated to
+ * ensure that labels do not persist incorrectly.
+ */
+function removeHispanicLabels() {
+  try {
+    const labels = document.querySelectorAll('.hispanic-label');
+    labels.forEach(label => label.remove());
+  } catch (error) {
+    debugLog(`Error in removeHispanicLabels: ${error.message}`);
+  }
+}
 
 /**
  * Ensure region label styles are available in the document.  Region labels are
@@ -1038,6 +1174,12 @@ function highlightCounties() {
     // This call is safe for non‑Florida pages; it will return immediately
     // if the detected state is not Florida or no regions are selected.
     addRegionLabels();
+
+    // Append Hispanic percentage labels to county names based on the
+    // current state and user settings.  This call is safe for
+    // states without Hispanic data or when the threshold filters out
+    // all counties.
+    addHispanicLabels();
   } catch (error) {
     debugLog(`Error in highlightCounties: ${error.message}`);
   }
@@ -1367,6 +1509,9 @@ function removeAllHighlights() {
 
     // Also remove any region labels that may have been added to county names.
     removeRegionLabels();
+
+    // Remove any Hispanic percentage labels that were added to county names.
+    removeHispanicLabels();
     
     // Clear the set of highlighted elements
     highlightedElements.clear();
