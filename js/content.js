@@ -55,7 +55,7 @@ const flCountyRegions = {
   "Clay County": "North",
   "Collier County": "South",
   "Columbia County": "North",
-  "DeSoto County": "South",
+  "Desoto County": "South",
   "Dixie County": "North",
   "Duval County": "North",
   "Escambia County": "North",
@@ -97,8 +97,8 @@ const flCountyRegions = {
   "Pinellas County": "Central",
   "Polk County": "Central",
   "Putnam County": "Central",
-  "St. Johns County": "Central",
-  "St. Lucie County": "South",
+  "St.Johns County": "Central",
+  "St.Lucie County": "South",
   "Santa Rosa County": "North",
   "Sarasota County": "South",
   "Seminole County": "Central",
@@ -1112,11 +1112,12 @@ function extractCountyName(row) {
     }
 
     // Remove region labels appended by this extension (North, Central or South)
-    // Region labels are appended after the county name separated by a space.  If
-    // present, strip the region from the end of the string.  Use a regular
-    // expression to handle optional trailing whitespace.  This ensures the
+    // Region labels are appended after the county name separated by a space. If
+    // present, strip the region from the end of the string. Use a regular
+    // expression to handle optional trailing whitespace and ignore case so that
+    // "north" or other case variations are also removed. This ensures the
     // original county name is recovered for lookup.
-    countyText = countyText.replace(/\s+(North|Central|South)\s*$/, '');
+    countyText = countyText.replace(/\s+(North|Central|South)\s*$/i, '');
 
     // Check if it ends with "County" after cleaning
     if (!countyText.endsWith('County')) {
