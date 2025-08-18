@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "County RUCC Highlighter",
-  "version": "3.3",
+  "version": "3.5",
   "description": "Highlights counties with specific Rural-Urban Continuum Codes on unitrustcrm.com",
   "icons": {
     "16": "images/icon16.png",

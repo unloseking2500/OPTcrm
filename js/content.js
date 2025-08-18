@@ -136,10 +136,9 @@ let hispanicDataLoaded = false;
 let hispanicDataLoading = null;
 
 /**
- * Ensure styling for Hispanic percentage labels is injected.  Hispanic
- * labels are displayed via a CSS pseudo‑element on table cells with the
- * `data-hispanic` attribute.  This function inserts the required
- * styles once per page.
+ * Ensure styling for Hispanic percentage labels is injected. Hispanic
+ * labels are appended as <span> elements with the class `hispanic-label`.
+ * This function inserts the required styles once per page.
  */
 function injectHispanicStyles() {
   if (document.getElementById('hispanic-label-styles')) return;
@@ -147,11 +146,7 @@ function injectHispanicStyles() {
   style.id = 'hispanic-label-styles';
   style.textContent = `
     /* Hispanic percentage label styling */
-    td[data-hispanic] {
-      position: relative !important;
-    }
-    td[data-hispanic]::after {
-      content: attr(data-hispanic);
+     .hispanic-label {
       margin-left: 5px;
       padding: 2px 4px;
       border-radius: 3px;
@@ -263,13 +258,16 @@ function addHispanicLabels() {
 	  
       const cell = row.querySelector('td:first-child');
       if (!cell) return;
+	  
+	  
+	  const existingLabel = cell.querySelector('.hispanic-label');
       
       const percent = getHispanicPercent(stateCode, countyName);
 
       // If the percent is unavailable, ensure no stale label remains
       if (percent === null || percent === undefined) {
-        if (cell.hasAttribute('data-hispanic')) {
-          cell.removeAttribute('data-hispanic');
+        if (existingLabel) {
+          existingLabel.remove();
         }
         return;
       }
@@ -279,14 +277,18 @@ function addHispanicLabels() {
 	  const labelValue = `${percent.toFixed(1)}%`;
 
       if (shouldShow) {
-        // Only update the attribute if the value has changed to avoid
-        // triggering unnecessary mutation events that can lead to
-        // highlighting loops and page freezes.
-        if (cell.getAttribute('data-hispanic') !== labelValue) {
-          cell.setAttribute('data-hispanic', labelValue);
+       if (existingLabel) {
+          if (existingLabel.textContent !== labelValue) {
+            existingLabel.textContent = labelValue;
+          }
+        } else {
+          const span = document.createElement('span');
+          span.className = 'hispanic-label';
+          span.textContent = labelValue;
+          cell.appendChild(span);
         }
-      } else if (cell.hasAttribute('data-hispanic')) {
-        cell.removeAttribute('data-hispanic');
+       } else if (existingLabel) {
+        existingLabel.remove();
       }
     });
   });
@@ -298,10 +300,8 @@ function addHispanicLabels() {
  */
 function removeHispanicLabels() {
   try {
-    const cells = document.querySelectorAll('td[data-hispanic]');
-    cells.forEach(cell => {
-      cell.removeAttribute('data-hispanic');
-    });
+    const labels = document.querySelectorAll('.hispanic-label');
+    labels.forEach(label => label.remove());
   } catch (error) {
     debugLog(`Error in removeHispanicLabels: ${error.message}`);
   }
@@ -1305,22 +1305,27 @@ function extractCountyName(row) {
     const firstCell = row.querySelector('td:first-child');
     if (!firstCell) return null;
     
-    let countyText = firstCell.textContent.trim();
+    // Extract only the text from the first child node so that labels appended
+    // by this extension (e.g. region or Hispanic percentage spans) do not
+    // interfere with the lookup.
+    let countyText = '';
+    if (firstCell.firstChild) {
+      countyText = firstCell.firstChild.textContent.trim();
+    } else {
+      countyText = firstCell.textContent.trim();
+    }
 
     // Remove any existing RUCC code display
     if (countyText.includes('[RUCC:')) {
       countyText = countyText.split('[RUCC:')[0].trim();
     }
 
-    // Remove region labels appended by this extension (North, Central or South)
-    // Region labels are appended after the county name separated by a space. If
-    // present, strip the region from the end of the string. Use a regular
-    // expression to handle optional trailing whitespace and ignore case so that
-    // "north" or other case variations are also removed. This ensures the
-    // original county name is recovered for lookup.
+    // Remove region labels or percentage labels accidentally embedded in the
+    // text.
     countyText = countyText.replace(/\s+(North|Central|South)\s*$/i, '');
+	countyText = countyText.replace(/\s+\d+(?:\.\d+)?%\s*$/i, '');
 
-    // Check if it ends with "County" after cleaning
+    // Ensure the result ends with "County"
     if (!countyText.endsWith('County')) {
       countyText += ' County';
     }
