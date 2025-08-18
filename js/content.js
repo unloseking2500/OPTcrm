@@ -259,18 +259,34 @@ function addHispanicLabels() {
     countyRows.forEach(row => {
       const countyName = extractCountyName(row);
       if (!countyName) return;
-      const percent = getHispanicPercent(stateCode, countyName);
+      
+	  
       const cell = row.querySelector('td:first-child');
       if (!cell) return;
-      // Remove any existing hispanic label
-      if (cell.hasAttribute('data-hispanic')) {
-        cell.removeAttribute('data-hispanic');
+      
+      const percent = getHispanicPercent(stateCode, countyName);
+
+      // If the percent is unavailable, ensure no stale label remains
+      if (percent === null || percent === undefined) {
+        if (cell.hasAttribute('data-hispanic')) {
+          cell.removeAttribute('data-hispanic');
+        }
+        return;
       }
-      if (percent === null || percent === undefined) return;
+      
+	  
       const shouldShow = threshold === Infinity || percent < threshold;
+	  const labelValue = `${percent.toFixed(1)}%`;
+
       if (shouldShow) {
-        const rounded = Math.round(percent);
-        cell.setAttribute('data-hispanic', `${rounded}%`);
+        // Only update the attribute if the value has changed to avoid
+        // triggering unnecessary mutation events that can lead to
+        // highlighting loops and page freezes.
+        if (cell.getAttribute('data-hispanic') !== labelValue) {
+          cell.setAttribute('data-hispanic', labelValue);
+        }
+      } else if (cell.hasAttribute('data-hispanic')) {
+        cell.removeAttribute('data-hispanic');
       }
     });
   });
