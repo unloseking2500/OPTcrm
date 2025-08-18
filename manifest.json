@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "County RUCC Highlighter",
-  "version": "3.4",
+  "version": "3.3",
   "description": "Highlights counties with specific Rural-Urban Continuum Codes on unitrustcrm.com",
   "icons": {
     "16": "images/icon16.png",
@@ -24,14 +24,20 @@
     {
       "matches": ["*://*.unitrustcrm.com/*"],
       "js": [
-        "js/hispanic_data.js",
         "js/county_data.js",
+        "js/hispanic_data_out.js",
+        "js/hispanic_data_init.js",
         "js/content.js"
       ],
       "css": ["css/content.css"],
       "run_at": "document_idle"
     }
   ],
+
+  /* Expose web accessible resources.  We no longer expose the JSON
+     because the Hispanic data is loaded directly via a script
+     (hispanic_data_out.js) and initialised by hispanic_data_init.js. */
+  "web_accessible_resources": [],
   "permissions": [
     "storage",
     "scripting",

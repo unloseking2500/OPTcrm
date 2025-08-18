@@ -7,6 +7,17 @@ let settings = {
   highlightColor: 'yellow',
   ruccCodesToHighlight: [4, 5, 6, 7, 8, 9],
   /**
+   * Filter for Hispanic labels. This determines which counties will display
+   * a Hispanic percentage label next to the county name. Possible values
+   * are:
+   *   'all'   – show labels for all counties regardless of percentage.
+   *   'lt10'  – only show labels when the percentage is less than 10%.
+   *   'lt25'  – only show labels when the percentage is less than 25%.
+   *   'lt50'  – only show labels when the percentage is less than 50%.
+   * If undefined or unrecognized, defaults to 'all'.
+   */
+  hispanicFilter: 'all',
+  /**
    * Track the last time the extension was active. Updated whenever settings
    * are applied or the service worker wakes up. This timestamp is persisted
    * via chrome.storage and sent to the popup for display.
