@@ -23,21 +23,21 @@
   "content_scripts": [
     {
       "matches": ["*://*.unitrustcrm.com/*"],
-      "js": [
-        "js/county_data.js",
-        "js/hispanic_data_out.js",
-        "js/hispanic_data_init.js",
-        "js/content.js"
-      ],
+      "js": ["js/county_data.js", "js/content.js"],
       "css": ["css/content.css"],
       "run_at": "document_idle"
     }
   ],
-
-  /* Expose web accessible resources.  We no longer expose the JSON
-     because the Hispanic data is loaded directly via a script
-     (hispanic_data_out.js) and initialised by hispanic_data_init.js. */
-  "web_accessible_resources": [],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "data/hispanic.csv"
+      ],
+      "matches": [
+        "*://*.unitrustcrm.com/*"
+      ]
+    }
+  ],
   "permissions": [
     "storage",
     "scripting",

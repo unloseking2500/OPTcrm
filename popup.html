@@ -435,27 +435,27 @@
   <h2>RUCC Codes to Highlight:</h2>
   <div class="checkbox-container">
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-4" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-4" checked>
       <label for="rucc-4">4</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-5" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-5" checked>
       <label for="rucc-5">5</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-6" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-6" checked>
       <label for="rucc-6">6</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-7" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-7" checked>
       <label for="rucc-7">7</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-8" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-8" checked>
       <label for="rucc-8">8</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="rucc-9" class="rucc-checkbox" checked>
+      <input type="checkbox" id="rucc-9" checked>
       <label for="rucc-9">9</label>
     </div>
   </div>
@@ -486,40 +486,43 @@
   <h2>Region Labels:</h2>
   <div class="checkbox-container">
     <div class="checkbox-item">
-      <input type="checkbox" id="region-north" class="region-checkbox" checked>
+      <input type="checkbox" id="region-north" checked>
       <label for="region-north">North</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="region-central" class="region-checkbox" checked>
+      <input type="checkbox" id="region-central" checked>
       <label for="region-central">Central</label>
     </div>
     <div class="checkbox-item">
-      <input type="checkbox" id="region-south" class="region-checkbox" checked>
+      <input type="checkbox" id="region-south" checked>
       <label for="region-south">South</label>
     </div>
   </div>
 
-  <!-- Hispanic percentage filter.  Radio buttons select which counties
-       receive a Hispanic % label: All counties, <10%, <25% or <50%.
-       These radio inputs are independent of the highlighting toggle so
-       users can still adjust them when highlighting is off. -->
+  <!-- Hispanic percentage filter radio buttons.  When a radio option is selected
+       the content script will append a label showing the percentage of the
+       population that identifies as Hispanic/Latino for each county.  The
+       filter options restrict which counties receive a label based on the
+       threshold selected.  Show All will display the percentage for every
+       county; the other options will display labels only if the percentage
+       is below the specified threshold. -->
   <h2>Hispanic % Labels:</h2>
-  <div class="color-options hispanic-options" style="flex-wrap: wrap; gap: 10px;">
-    <div class="color-option">
-      <input type="radio" id="hispanic-all" class="hispanic-radio" name="hispanic-filter" value="all" checked>
+  <div class="checkbox-container">
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-lt10" name="hispanic-filter" value="lt10">
+      <label for="hispanic-lt10">&lt;10%</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-lt25" name="hispanic-filter" value="lt25">
+      <label for="hispanic-lt25">&lt;25%</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-lt50" name="hispanic-filter" value="lt50">
+      <label for="hispanic-lt50">&lt;50%</label>
+    </div>
+    <div class="checkbox-item">
+      <input type="radio" id="hispanic-all" name="hispanic-filter" value="all" checked>
       <label for="hispanic-all">Show All</label>
-    </div>
-    <div class="color-option">
-      <input type="radio" id="hispanic-10" class="hispanic-radio" name="hispanic-filter" value="lt10">
-      <label for="hispanic-10">&lt; 10%</label>
-    </div>
-    <div class="color-option">
-      <input type="radio" id="hispanic-25" class="hispanic-radio" name="hispanic-filter" value="lt25">
-      <label for="hispanic-25">&lt; 25%</label>
-    </div>
-    <div class="color-option">
-      <input type="radio" id="hispanic-50" class="hispanic-radio" name="hispanic-filter" value="lt50">
-      <label for="hispanic-50">&lt; 50%</label>
     </div>
   </div>
   

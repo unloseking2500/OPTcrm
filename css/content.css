@@ -1,0 +1,230 @@
+/* Enhanced CSS with more aggressive styling to prevent website overrides */
+
+/* Base highlighted row styles with extremely high specificity */
+tr.rucc-highlighted,
+table tr.rucc-highlighted,
+.table tr.rucc-highlighted,
+div table tr.rucc-highlighted,
+#content table tr.rucc-highlighted,
+[class*="table"] tr.rucc-highlighted,
+*[class] tr.rucc-highlighted,
+body tr.rucc-highlighted,
+html body tr.rucc-highlighted,
+html body div tr.rucc-highlighted,
+html body table tr.rucc-highlighted,
+html body div table tr.rucc-highlighted {
+  background-color: rgba(255, 255, 0, 0.5) !important;
+  border: 2px solid rgba(255, 215, 0, 0.7) !important;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2) !important;
+  position: relative !important;
+  z-index: 1 !important;
+  transform: translateZ(0) !important;
+  will-change: opacity !important;
+  animation: rucc-highlight-persist 1s infinite alternate !important;
+}
+
+/* Base highlighted cell styles with extremely high specificity */
+tr.rucc-highlighted td,
+table tr.rucc-highlighted td,
+.table tr.rucc-highlighted td,
+div table tr.rucc-highlighted td,
+#content table tr.rucc-highlighted td,
+[class*="table"] tr.rucc-highlighted td,
+*[class] tr.rucc-highlighted td,
+body tr.rucc-highlighted td,
+html body tr.rucc-highlighted td,
+html body div tr.rucc-highlighted td,
+html body table tr.rucc-highlighted td,
+html body div table tr.rucc-highlighted td {
+  background-color: rgba(255, 255, 0, 0.5) !important;
+}
+
+/* Yellow highlight variant */
+tr.rucc-highlighted.yellow,
+table tr.rucc-highlighted.yellow,
+.table tr.rucc-highlighted.yellow,
+div table tr.rucc-highlighted.yellow,
+#content table tr.rucc-highlighted.yellow,
+[class*="table"] tr.rucc-highlighted.yellow,
+*[class] tr.rucc-highlighted.yellow,
+body tr.rucc-highlighted.yellow,
+html body tr.rucc-highlighted.yellow,
+html body div tr.rucc-highlighted.yellow,
+html body table tr.rucc-highlighted.yellow,
+html body div table tr.rucc-highlighted.yellow {
+  background-color: rgba(255, 255, 0, 0.5) !important;
+  border: 2px solid rgba(255, 215, 0, 0.7) !important;
+}
+
+tr.rucc-highlighted.yellow td,
+table tr.rucc-highlighted.yellow td,
+.table tr.rucc-highlighted.yellow td,
+div table tr.rucc-highlighted.yellow td,
+#content table tr.rucc-highlighted.yellow td,
+[class*="table"] tr.rucc-highlighted.yellow td,
+*[class] tr.rucc-highlighted.yellow td,
+body tr.rucc-highlighted.yellow td,
+html body tr.rucc-highlighted.yellow td,
+html body div tr.rucc-highlighted.yellow td,
+html body table tr.rucc-highlighted.yellow td,
+html body div table tr.rucc-highlighted.yellow td {
+  background-color: rgba(255, 255, 0, 0.5) !important;
+}
+
+/* Green highlight variant */
+tr.rucc-highlighted.green,
+table tr.rucc-highlighted.green,
+.table tr.rucc-highlighted.green,
+div table tr.rucc-highlighted.green,
+#content table tr.rucc-highlighted.green,
+[class*="table"] tr.rucc-highlighted.green,
+*[class] tr.rucc-highlighted.green,
+body tr.rucc-highlighted.green,
+html body tr.rucc-highlighted.green,
+html body div tr.rucc-highlighted.green,
+html body table tr.rucc-highlighted.green,
+html body div table tr.rucc-highlighted.green {
+  background-color: rgba(0, 255, 0, 0.5) !important;
+  border: 2px solid rgba(0, 128, 0, 0.7) !important;
+}
+
+tr.rucc-highlighted.green td,
+table tr.rucc-highlighted.green td,
+.table tr.rucc-highlighted.green td,
+div table tr.rucc-highlighted.green td,
+#content table tr.rucc-highlighted.green td,
+[class*="table"] tr.rucc-highlighted.green td,
+*[class] tr.rucc-highlighted.green td,
+body tr.rucc-highlighted.green td,
+html body tr.rucc-highlighted.green td,
+html body div tr.rucc-highlighted.green td,
+html body table tr.rucc-highlighted.green td,
+html body div table tr.rucc-highlighted.green td {
+  background-color: rgba(0, 255, 0, 0.5) !important;
+}
+
+/* Blue highlight variant */
+tr.rucc-highlighted.blue,
+table tr.rucc-highlighted.blue,
+.table tr.rucc-highlighted.blue,
+div table tr.rucc-highlighted.blue,
+#content table tr.rucc-highlighted.blue,
+[class*="table"] tr.rucc-highlighted.blue,
+*[class] tr.rucc-highlighted.blue,
+body tr.rucc-highlighted.blue,
+html body tr.rucc-highlighted.blue,
+html body div tr.rucc-highlighted.blue,
+html body table tr.rucc-highlighted.blue,
+html body div table tr.rucc-highlighted.blue {
+  background-color: rgba(0, 0, 255, 0.3) !important;
+  border: 2px solid rgba(0, 0, 139, 0.7) !important;
+}
+
+tr.rucc-highlighted.blue td,
+table tr.rucc-highlighted.blue td,
+.table tr.rucc-highlighted.blue td,
+div table tr.rucc-highlighted.blue td,
+#content table tr.rucc-highlighted.blue td,
+[class*="table"] tr.rucc-highlighted.blue td,
+*[class] tr.rucc-highlighted.blue td,
+body tr.rucc-highlighted.blue td,
+html body tr.rucc-highlighted.blue td,
+html body div tr.rucc-highlighted.blue td,
+html body table tr.rucc-highlighted.blue td,
+html body div table tr.rucc-highlighted.blue td {
+  background-color: rgba(0, 0, 255, 0.3) !important;
+}
+
+/* RUCC code display styling */
+.rucc-code {
+  font-weight: bold !important;
+  color: #d32f2f !important;
+  margin-left: 5px !important;
+  display: inline-block !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* Tooltip for RUCC information */
+tr.rucc-highlighted[data-rucc]:hover::after {
+  content: attr(data-rucc);
+  position: absolute;
+  left: 0;
+  top: -30px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* Status indicator for autonomous mode */
+.rucc-status-indicator {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.rucc-status-indicator.visible {
+  opacity: 1;
+}
+
+/* Ensure highlighting persists even with website's CSS */
+@keyframes rucc-highlight-persist {
+  0% { opacity: 0.99; }
+  100% { opacity: 1; }
+}
+
+/* Apply animation to ensure continuous repainting */
+tr.rucc-highlighted {
+  animation: rucc-highlight-persist 1s infinite alternate !important;
+  transform: translateZ(0) !important;
+  will-change: opacity !important;
+  backface-visibility: hidden !important;
+  perspective: 1000px !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Additional styles to prevent website overrides */
+tr.rucc-highlighted::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Ensure cells maintain highlighting */
+tr.rucc-highlighted td::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Force hardware acceleration */
+tr.rucc-highlighted,
+tr.rucc-highlighted td {
+  -webkit-transform: translateZ(0) !important;
+  -moz-transform: translateZ(0) !important;
+  -ms-transform: translateZ(0) !important;
+  -o-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+}
